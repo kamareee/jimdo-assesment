@@ -5,7 +5,6 @@ import json
 
 
 # Sample SQS message
-from botocore.exceptions import ClientError
 
 sqs_message = {
     "Records": [
@@ -44,35 +43,40 @@ sqs_message = {
 
 bucket = 'jimdodevraw'
 
-# Sample Lambda function to send to raw S3 bucket (refer to architecture diagram)
-date = datetime.strftime(datetime.now(), '%Y-%m-%d')
-hour = str(datetime.now().hour)
 
-name = date + '_' + hour + '_data'
-file_type = '.txt'
+def main():
+    # Sample Lambda function to send to raw S3 bucket (refer to architecture diagram)
+    date = datetime.strftime(datetime.now(), '%Y-%m-%d')
+    hour = str(datetime.now().hour)
 
-output_filename = name + file_type
+    name = date + '_' + hour + '_data'
+    file_type = '.txt'
+
+    output_filename = name + file_type
+
+    object_prefix = 'date=' + date + '/' + hour + '/' + output_filename
+
+    records = sqs_message['Records']
+
+    output_file = open(output_filename, 'w', encoding='utf-8')
+
+    logging.info("Writing queue message to text file....")
+
+    for record in records:
+        json.dump(record, output_file)
+        output_file.write("\n")
+
+    output_file.close()
+
+    # Writing to raw S3 bucket
+    # The text file will be dumped to this raw bucket with prefix date=<etl date>/etl_hour
+    # i.e. s3://jimdodevraw/date=2021-07-03/15/
+    s3_client = boto3.client('s3')
+
+    with open(output_filename, "rb") as f:
+        s3_client.upload_fileobj(f, bucket, object_prefix)
 
 
-object_prefix = 'date=' + date + '/' + hour + '/' + output_filename
-
-records = sqs_message['Records']
-
-output_file = open(output_filename, 'w', encoding='utf-8')
-
-logging.info("Writing queue message to text file....")
-
-for record in records:
-    json.dump(record, output_file)
-    output_file.write("\n")
-
-output_file.close()
-
-# Writing to raw S3 bucket
-# The text file will be dumped to this raw bucket with prefix date=<etl date>/etl_hour
-# i.e. s3://jimdodevraw/date=2021-07-03/15/
-s3_client = boto3.client('s3')
-
-with open(output_filename, "rb") as f:
-    s3_client.upload_fileobj(f, bucket, object_prefix)
+if __name__ == "__main__":
+    main()
 
