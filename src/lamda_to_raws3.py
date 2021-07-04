@@ -73,9 +73,6 @@ output_file.close()
 # i.e. s3://jimdodevraw/date=2021-07-03/15/
 s3_client = boto3.client('s3')
 
-try:
-    response = s3_client.upload_file(output_filename, bucket, object_prefix)
-except ClientError as e:
-    logging.error(e)
-
+with open(output_filename, "rb") as f:
+    s3_client.upload_fileobj(f, bucket, object_prefix)
 
