@@ -49,7 +49,7 @@ def main():
     date = datetime.strftime(datetime.now(), '%Y-%m-%d')
     hour = str(datetime.now().hour)
 
-    name = date + '_' + hour + '_data'
+    name = date + '_' + hour + '_data'  # Add an unique identifier using uuid
     file_type = '.txt'
 
     output_filename = name + file_type
